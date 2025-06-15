@@ -3,35 +3,33 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 // Login
+
 exports.login = async (req, res) => {
   const { email, senha } = req.body;
 
   try {
     const usuario = await Usuario.findOne({ where: { email } });
-
-    if (!usuario) {
-      return res.status(401).json({ mensagem: "Email ou senha inválidos" });
-    }
+    if (!usuario) return res.status(401).json({ mensagem: "Email ou senha inválidos" });
 
     const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaCorreta) {
-      return res.status(401).json({ mensagem: "Email ou senha inválidos" });
-    }
+    if (!senhaCorreta) return res.status(401).json({ mensagem: "Email ou senha inválidos" });
 
     const token = jwt.sign(
-      { id: usuario.id, email: usuario.email },
+      { id: usuario.id, email: usuario.email, tipo: usuario.tipo }, // opcional colocar no token
       process.env.JWT_SECRET || "segredo_simples",
       { expiresIn: "1h" }
     );
 
+    /*  ➡️  AGORA devolvemos `tipo`  */
     res.json({
       mensagem: "Login bem-sucedido",
       token,
       usuario: {
-        id: usuario.id,
-        nome: usuario.nome,
-        sobrenome: usuario.sobrenome,
-        email: usuario.email,
+        id:         usuario.id,
+        nome:       usuario.nome,
+        sobrenome:  usuario.sobrenome,
+        email:      usuario.email,
+        tipo:       usuario.tipo      // <<<<<<
       },
     });
   } catch (err) {
@@ -39,6 +37,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ mensagem: "Erro interno no servidor" });
   }
 };
+
 
 // Registro
 exports.register = async (req, res) => {
